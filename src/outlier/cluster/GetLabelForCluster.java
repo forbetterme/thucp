@@ -22,7 +22,6 @@ public class GetLabelForCluster {//每个cluster的label仅供参考，目的是
 			return arg1.freq.compareTo(arg0.freq);
 		}
 	};
-	
 //	public static void main(String[] args) throws IOException{
 //		GetLabelForCluster ins=new GetLabelForCluster();
 //		ins.getClusterToItems("D:/data4code/dataclean/topic","D:/data4code/cluster/clusterToItems.csv", 10);//每个topic，最多选10个代表词

@@ -12,7 +12,6 @@ public class Point {
 		this.value=value;
 	}
 	
-	
 	@Override
 	public boolean equals(Object obj) {
 		Point point = (Point) obj;
