@@ -19,4 +19,5 @@ public class EntityTopicFreq {
 	public void setFreq(Double freq) {
 		this.freq = freq;
 	}
+	
 }

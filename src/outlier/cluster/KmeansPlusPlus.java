@@ -121,6 +121,7 @@ public class KmeansPlusPlus {
 			set.add(candinate.get(h+1));
 			nowCenter.add(dataset.get(candinate.get(h+1)));
 		}
+		
 
 		// 上一次的聚簇中心
 		Map<Integer, List<Point>> lastClusterCenterMap = null;
