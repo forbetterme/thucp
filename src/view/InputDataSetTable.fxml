@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane 
+<AnchorPane
 	xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
 	<children>
 		<TableView fx:id="inputTable" layoutY="54.0" prefHeight="1000.0"
@@ -13,7 +13,7 @@
 			AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
 			AnchorPane.topAnchor="1.0">
 			<columns>
-				<TableColumn fx:id="key" prefWidth="800.0" text="已导入数据" />
+				<TableColumn fx:id="key" prefWidth="500.0" text="已导入数据" />
 				<TableColumn fx:id="opDelete" prefWidth="60.0" text="删除" />
 				<TableColumn fx:id="opLook" prefWidth="60.0" text="查看" />
 			</columns>

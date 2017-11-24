@@ -69,7 +69,7 @@ public class FrameworkMain extends Application {
 			// 为表格设置控制器
 			loader.setController(new InputTableController());
 			AnchorPane tableViewPane = loader.load();
-			tableViewPane.setPadding(new Insets(5, 500, 5, 500));
+			tableViewPane.setPadding(new Insets(5, 300, 5, 300));
 //			tableViewPane.setPrefSize(1000, 1000);
 //			tableViewPane.autosize();
 			TabPane inputTabPane = new TabPane();
@@ -77,7 +77,7 @@ public class FrameworkMain extends Application {
 			tableViewTab.setContent(tableViewPane);
 			tableViewTab.setClosable(false);
 			inputTabPane.getTabs().add(tableViewTab);
-			
+
 			VBox inputVbox = new VBox();
 //			inputVbox.setAlignment(Pos.CENTER);
 			inputVbox.setSpacing(5);
@@ -86,7 +86,7 @@ public class FrameworkMain extends Application {
 			inputVbox.getChildren().add(inputTabPane);
 			input.setContent(inputVbox);
 			InputFromFileUI inputFromFileUI = new InputFromFileUI(inputVbox, menuFile, primaryStage,loader,inputTabPane);
-
+			InputFromDataBaseUI inputFromDatabase = new InputFromDataBaseUI(inputVbox, menuDataBase, primaryStage, loader, inputTabPane);
 			Tab func = new Tab("    func    ");
 			func.closableProperty().set(false);
 			Menu menu1 = new Menu("1.临床路径模型挖掘");
@@ -98,6 +98,8 @@ public class FrameworkMain extends Application {
 			MenuItem menuwei1 = new MenuItem("基于临床数据挖掘的医疗过程异常发现方法研究与应用");
 			menu2.getItems().add(menuwei1);
 			Menu menu3 = new Menu("3.本地化临床路径模型设计");
+			MenuItem menu31 = new MenuItem("CPMRM");
+			menu3.getItems().addAll(menu31);
 			Menu menu4 = new Menu("4.合规性度量");
 			Menu menu5 = new Menu("5.后续路径推荐");
 			Menu menu6 = new Menu("6.诊疗过程比较");
@@ -109,16 +111,17 @@ public class FrameworkMain extends Application {
 			funVbox.setSpacing(5);
 			funVbox.setPadding(new Insets(5, 0, 5, 0));
 			func.setContent(funVbox);
-			
+
 			funcTabPane.setPrefSize(1000, 1000);
 			funcTabPane.autosize();
 			funVbox.getChildren().add(funcMenuBar);
 			funVbox.getChildren().add(funcTabPane);
 			FuncOutlieDetectionUI funcOutlieDetectionUI = new FuncOutlieDetectionUI(primaryStage,menuwei1,funcTabPane);
-			
+			CPMRMUI cpmrmUI = new CPMRMUI(primaryStage,  menu31, tabPane);
+
 			Tab output = new Tab("    output    ");
 			output.closableProperty().set(false);
-			
+
 			tabPane.getTabs().addAll(input, func);
 			final Scene scene = new Scene(vbox);
 			vbox.getChildren().addAll(tabPane);

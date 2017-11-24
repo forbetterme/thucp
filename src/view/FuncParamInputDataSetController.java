@@ -30,7 +30,7 @@ public class FuncParamInputDataSetController implements Initializable {
     private TableColumn<InputData, String> key;
 	@FXML
     private TableColumn<InputData, Boolean> isSelected;
-	
+
 	public ObservableList<InputData> getInputDataSet() {
 		ObservableList<InputData> list = FXCollections.observableArrayList();
 		for (Map.Entry<String, InputData> entry : FrameworkMain.inputDataSet.entrySet()) {
@@ -38,7 +38,7 @@ public class FuncParamInputDataSetController implements Initializable {
 		}
 		return list;
 	}
-	
+
 	public void showFunParamInputTable(ObservableList<InputData> list) {
 		key.setCellValueFactory(new PropertyValueFactory<>("key"));
 		isSelected.setCellFactory((col) -> {
@@ -76,5 +76,5 @@ public class FuncParamInputDataSetController implements Initializable {
 	public void initialize(URL location, ResourceBundle resources) {
 		this.showFunParamInputTable(getInputDataSet());
 	}
-	
+
 }
