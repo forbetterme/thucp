@@ -55,7 +55,7 @@ public class Main extends Application {
 	public void start(Stage primaryStage) {
 		try {
 			VBox vbox = new VBox();
-			vbox.setPrefSize(1000, 800);
+			vbox.setPrefSize(900, 600);
 			vbox.setSpacing(5);
 			vbox.setPadding(new Insets(5, 0, 5, 0));
 			final Label outputLabel = new Label();
@@ -65,8 +65,13 @@ public class Main extends Application {
 			MenuItem menu11 = new MenuItem("LDA+PM");
 			MenuItem menu12 = new MenuItem("SS-LDA+PM");
 			MenuItem menu13 = new MenuItem("SSS-LDA+PM+SC");
-			
+
 			MenuItem menuwei1 = new MenuItem("LDA+CLUSTER+PM+REPLAY");
+
+			//Options->Submenu 3 submenu
+			MenuItem menu31 = new MenuItem("CPMRM");
+
+
 
 			// Options menu
 			Menu menu1 = new Menu("1.临床路径模型挖掘");
@@ -75,6 +80,7 @@ public class Main extends Application {
 			Menu menu2 = new Menu("2.异常诊疗过程发现");
 			menu2.getItems().add(menuwei1);
 			Menu menu3 = new Menu("3.本地化临床路径模型设计");
+			menu3.getItems().addAll(menu31);
 			Menu menu4 = new Menu("4.合规性度量");
 			Menu menu5 = new Menu("5.后续路径推荐");
 			Menu menu6 = new Menu("6.诊疗过程比较");
@@ -97,7 +103,10 @@ public class Main extends Application {
 			final Scene scene = new Scene(vbox);
 
 			TCPMUI tcpmUI = new TCPMUI(primaryStage, scene, menu11, toolbar, tabPane, stateLabel);
-			OutlierDetectionUI outlierDetectionUI = new OutlierDetectionUI(primaryStage, scene, menuwei1, toolbar, tabPane, stateLabel);
+
+			CPMRMUI cpmrmUI = new CPMRMUI(primaryStage, scene, menu31, toolbar, tabPane, stateLabel);
+
+
 
 			primaryStage.setScene(scene);
 			primaryStage.show();

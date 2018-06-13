@@ -77,7 +77,7 @@ public class FrameworkMain extends Application {
 			tableViewTab.setContent(tableViewPane);
 			tableViewTab.setClosable(false);
 			inputTabPane.getTabs().add(tableViewTab);
-			
+
 			VBox inputVbox = new VBox();
 //			inputVbox.setAlignment(Pos.CENTER);
 			inputVbox.setSpacing(5);
@@ -86,7 +86,7 @@ public class FrameworkMain extends Application {
 			inputVbox.getChildren().add(inputTabPane);
 			input.setContent(inputVbox);
 			InputFromFileUI inputFromFileUI = new InputFromFileUI(inputVbox, menuFile, primaryStage,loader,inputTabPane);
-
+			InputFromDataBaseUI inputFromDatabase = new InputFromDataBaseUI(inputVbox, menuDataBase, primaryStage, loader, inputTabPane);
 			Tab func = new Tab("    功能视图    ");
 			func.closableProperty().set(false);
 			Menu menu1 = new Menu("1.临床路径模型挖掘");
@@ -101,11 +101,13 @@ public class FrameworkMain extends Application {
 			menu2.getItems().add(menuLDA);
 			menu2.getItems().add(menuKMeans);
 			menu2.getItems().add(menuwei1);
-//			Menu menu3 = new Menu("3.本地化临床路径模型设计");
-//			Menu menu4 = new Menu("4.合规性度量");
-//			Menu menu5 = new Menu("5.后续路径推荐");
-//			Menu menu6 = new Menu("6.诊疗过程比较");
-//			Menu menu7 = new Menu("7.临床路径模型分析");
+			Menu menu3 = new Menu("3.本地化临床路径模型设计");
+			MenuItem menu31 = new MenuItem("CPMRM");
+			menu3.getItems().addAll(menu31);
+			Menu menu4 = new Menu("4.合规性度量");
+			Menu menu5 = new Menu("5.后续路径推荐");
+			Menu menu6 = new Menu("6.诊疗过程比较");
+			Menu menu7 = new Menu("7.临床路径模型分析");
 			final MenuBar funcMenuBar = new MenuBar();
 			funcMenuBar.getMenus().addAll(menu1, menu2);//, menu3, menu4, menu5, menu6, menu7);
 			TabPane funcTabPane = new TabPane();
@@ -113,13 +115,14 @@ public class FrameworkMain extends Application {
 			funVbox.setSpacing(5);
 			funVbox.setPadding(new Insets(5, 0, 5, 0));
 			func.setContent(funVbox);
-			
+
 			funcTabPane.setPrefSize(1000, 1000);
 			funcTabPane.autosize();
 			funVbox.getChildren().add(funcMenuBar);
 			funVbox.getChildren().add(funcTabPane);
 			FuncOutlieDetectionUI funcOutlieDetectionUI = new FuncOutlieDetectionUI(primaryStage,menuDataClean,menuLDA,menuKMeans,menuwei1,funcTabPane);
-			
+			CPMRMUI cpmrmUI = new CPMRMUI(primaryStage,  menu31, tabPane);
+
 			Tab output = new Tab("    output    ");
 			output.closableProperty().set(false);
 			

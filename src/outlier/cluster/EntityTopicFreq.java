@@ -1,3 +1,4 @@
+
 package outlier.cluster;
 
 public class EntityTopicFreq {
@@ -21,3 +22,4 @@ public class EntityTopicFreq {
 	}
 	
 }
+
