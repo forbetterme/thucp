@@ -61,6 +61,107 @@ public class AlignLaunch {
 	public static JComponent resultIM=null;
 	
 	public static int iteration = 0;
+	
+	public static void lauchLuPing(String logPath) throws Exception {
+		PackageManager packages = PackageManager.getInstance();
+		//		 Then the plugin manager, as it listens to the package manager
+		PluginManagerImpl.initialize(UIPluginContext.class);
+		//		
+		UIContext globalContext;
+		globalContext = new UIContext();
+		globalContext.initialize();
+		//		final UITopiaController controller = new UITopiaController(globalContext);
+		//		globalContext.setController(controller);
+		//		globalContext.setFrame(controller.getFrame());
+		//		controller.getFrame().setIconImage(ImageLoader.load("prom_icon_32x32.png"));
+		//		controller.getFrame().setVisible(true);
+		////		controller.getMainView().showWorkspaceView();
+		////		controller.getMainView().getWorkspaceView().showFavorites();
+		////		globalContext.startup();
+
+		File file = new File(logPath);
+		CSVFileReferenceUnivocityImpl csvFile = new CSVFileReferenceUnivocityImpl(file.toPath());
+		CSVConfig config = new CSVConfig(csvFile);
+		try (ICSVReader reader = csvFile.createReader(config)) {
+			CSVConversion conversion = new CSVConversion();
+			CSVConversionConfig conversionConfig = new CSVConversionConfig(csvFile, config);
+			conversionConfig.autoDetect();
+			conversionConfig.setCaseColumns(ImmutableList.of("case"));
+			conversionConfig.setEventNameColumns(ImmutableList.of("event"));
+			conversionConfig.setCompletionTimeColumn("time");
+			conversionConfig.setEmptyCellHandlingMode(CSVEmptyCellHandlingMode.SPARSE);
+			conversionConfig.setErrorHandlingMode(CSVErrorHandlingMode.ABORT_ON_ERROR);
+			Map<String, CSVMapping> conversionMap = conversionConfig.getConversionMap();
+			CSVMapping mapping = conversionMap.get("time");
+			mapping.setDataType(Datatype.TIME);
+			mapping.setPattern("yyyy-MM-dd");
+
+			final ProgressListener progressListener = new NoOpProgressListenerImpl();
+			ConversionResult<XLog> result = conversion.doConvertCSVToXES(progressListener, csvFile, config,
+					conversionConfig);
+			XLog log = result.getResult();
+			System.out.println(log.size());
+			PluginContext context = globalContext.getMainPluginContext();
+			IMPetriNet ins = new IMPetriNet();
+			Object[] re = ins.minePetriNet(context, log, new MiningParametersIMi());
+			PetriNetVisualization v = new PetriNetVisualization();
+			resultIM = v.visualize(context, (Petrinet) re[0], (Marking) (re[1]));
+
+			AbstractPILPDelegate.setDebugMode(null);
+
+//			ComputeCostBasedOnFreq insComputeCostBasedOnFreq = new ComputeCostBasedOnFreq();
+//			insComputeCostBasedOnFreq.initPreMapping("D:/data4code/replay/pre.csv");
+//			insComputeCostBasedOnFreq.getEventSeqForEachPatient("D:/data4code/cluster/LogBasedOnKmeansPlusPlus-14.csv");
+//			insComputeCostBasedOnFreq.removeOneLoop();
+
+			
+			file = new File("data/OutlierDetection/cluster/I61dot902-kmeans-11-align.csv");
+			csvFile = new CSVFileReferenceUnivocityImpl(file.toPath());
+			config = new CSVConfig(csvFile);
+			ICSVReader reader2 = csvFile.createReader(config);
+				conversion = new CSVConversion();
+				conversionConfig = new CSVConversionConfig(csvFile, config);
+				conversionConfig.autoDetect();
+				conversionConfig.setCaseColumns(ImmutableList.of("case"));
+				conversionConfig.setEventNameColumns(ImmutableList.of("event"));
+				conversionConfig.setCompletionTimeColumn("time");
+				conversionConfig.setEmptyCellHandlingMode(CSVEmptyCellHandlingMode.SPARSE);
+				conversionConfig.setErrorHandlingMode(CSVErrorHandlingMode.ABORT_ON_ERROR);
+				conversionMap = conversionConfig.getConversionMap();
+				mapping = conversionMap.get("time");
+				mapping.setDataType(Datatype.TIME);
+				mapping.setPattern("yyyy-MM-dd");
+
+				ConversionResult<XLog> result2 = conversion.doConvertCSVToXES(progressListener, csvFile, config,
+						conversionConfig);
+				XLog log2 = result2.getResult();
+				System.out.println(log2.size());
+			
+			
+			PetrinetGraph net = (PetrinetGraph) re[0];
+			Marking initialMarking = (Marking) re[1];
+			Marking[] finalMarkings = { (Marking) re[2] }; // only one marking is used so far
+			Map<Transition, Integer> costMOS = null; // movements on system
+			Map<XEventClass, Integer> costMOT = null; // movements on trace
+			TransEvClassMapping mappingTransEvClassMapping = null;
+			//			XParserRegistry temp=XParserRegistry.instance();
+			//			temp.setCurrentDefault(new XesXmlParser());
+			//			log = temp.currentDefault().parse(new File("D:/data4code/mm.xes")).get(0);
+			//			log = XParserRegistry.instance().currentDefault().parse(new File("d:/temp/BPI2013all90.xes.gz")).get(0);
+			//			log = XParserRegistry.instance().currentDefault().parse(new File("d:/temp/BPI 730858110.xes.gz")).get(0);
+			//			log = XFactoryRegistry.instance().currentDefault().openLog();
+			costMOS = constructMOSCostFunction(net);
+			XEventClass dummyEvClass = new XEventClass("DUMMY", 99999);
+			XEventClassifier eventClassifier = XLogInfoImpl.NAME_CLASSIFIER;
+			costMOT = constructMOTCostFunction(net, log2, eventClassifier, dummyEvClass);
+			mappingTransEvClassMapping = constructMapping(net, log2, dummyEvClass, eventClassifier);
+			costMOS = constructMOSCostFunction(net);
+			int cost1 = computeCost(costMOS, costMOT, initialMarking, finalMarkings, context, net, log2,
+					mappingTransEvClassMapping, false);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 	public static void lauch(String logPath) throws Exception {
 		PackageManager packages = PackageManager.getInstance();
@@ -94,7 +195,7 @@ public class AlignLaunch {
 			Map<String, CSVMapping> conversionMap = conversionConfig.getConversionMap();
 			CSVMapping mapping = conversionMap.get("time");
 			mapping.setDataType(Datatype.TIME);
-			mapping.setPattern("yyyy/MM/dd");
+			mapping.setPattern("yyyy-MM-dd");
 
 			final ProgressListener progressListener = new NoOpProgressListenerImpl();
 			ConversionResult<XLog> result = conversion.doConvertCSVToXES(progressListener, csvFile, config,

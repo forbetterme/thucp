@@ -2,6 +2,7 @@ package view;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,10 +25,17 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.text.Text;
 
 public class InputDataStatics {
@@ -51,11 +59,11 @@ public class InputDataStatics {
 		}
 		Integer size = data.getDataForLog().size();
 		Text re = new Text();
-		re.setText("\n" + "trace数目: " + visits.size() + "\n\n" + "event总数:" + items.size());
+		re.setText("\n" + "病人数量: " + visits.size() + "\n\n" + "诊疗项目数量:" + items.size()+"\n\n\n");
 		return re;
 	}
 
-	public SwingNode getStayDistribution(String inputDataKey) {
+	public LineChart<Number, Number> getStayDistribution(String inputDataKey) {
 		Map<String, ArrayList<InputDataRowType>> case2events = new HashMap<String, ArrayList<InputDataRowType>>();
 		InputData data = FrameworkMain.inputDataSet.get(inputDataKey);
 		TreeMap<Long, Integer> day2casesSize = new TreeMap<Long, Integer>();
@@ -84,42 +92,24 @@ public class InputDataStatics {
 				day2casesSize.put(key, 1);
 			}
 		}
-//		Long min = Long.MAX_VALUE;
-//		Long max = Long.MIN_VALUE;
-//		for (Map.Entry<Long, Integer> entry : day2casesSize.entrySet()) {
-//			if (entry.getKey().compareTo(max) > 0)
-//				max = entry.getKey();
-//			if (entry.getKey().compareTo(min) < 0)
-//				min = entry.getKey();
-//		}
-//		System.out.println(min + ":" + max);
+		
+		final NumberAxis xAxis = new NumberAxis();
+	    final NumberAxis yAxis = new NumberAxis();
+	    xAxis.setLabel("住院天数");
+	    yAxis.setLabel("病人数量");
+	    final LineChart<Number, Number> lineChart = new LineChart<Number, Number>(
+	        xAxis, yAxis);
+	    XYChart.Series<Number, Number> series = new XYChart.Series<Number, Number>();
+	    series.setName("         住院天数分布图");
 		
 		DefaultCategoryDataset mDataset = new DefaultCategoryDataset();
 		for (Map.Entry<Long, Integer> entry : day2casesSize.entrySet()) {
-			mDataset.addValue(entry.getValue(), "住院天数", entry.getKey());
+			series.getData().add(new XYChart.Data<Number, Number>(entry.getKey(), entry.getValue()));
+//			mDataset.addValue(entry.getValue(), "住院天数", entry.getKey());
 		}
+		lineChart.getData().add(series);
+		return lineChart;
 		
-		StandardChartTheme mChartTheme = new StandardChartTheme("CN");
-		mChartTheme.setLargeFont(new Font("黑体", Font.BOLD, 20));
-		mChartTheme.setExtraLargeFont(new Font("宋体", Font.PLAIN, 15));
-		mChartTheme.setRegularFont(new Font("宋体", Font.PLAIN, 15));
-		ChartFactory.setChartTheme(mChartTheme);
-		JFreeChart mChart = ChartFactory.createLineChart("住院天数分布图", // 图名字
-				"住院天数", // 横坐标
-				"数量", // 纵坐标
-				mDataset, // 数据集
-				PlotOrientation.VERTICAL, false, // 显示图例
-				true, // 采用标准生成器
-				false);// 是否生成超链接
-
-		CategoryPlot mPlot = (CategoryPlot) mChart.getPlot();
-		mPlot.setBackgroundPaint(Color.LIGHT_GRAY);
-		mPlot.setRangeGridlinePaint(Color.BLUE);// 背景底部横虚线
-		mPlot.setOutlinePaint(Color.RED);// 边界线
-		SwingNode node=new SwingNode();
-		ChartPanel c=new ChartPanel(mChart);
-		node.setContent(c);
-		return node;
 	}
 
 	public static Long getDatePoor(Date endDate, Date nowDate) {
@@ -139,6 +129,63 @@ public class InputDataStatics {
 		// 计算差多少秒//输出结果
 		// long sec = diff % nd % nh % nm / ns;
 		return (day * 24 + hour) / 24;
+	}
+	
+	public TableView<ObservableList<String>> getDetails(String inputDataKey) {
+		SimpleDateFormat df=new SimpleDateFormat("yyyy-MM-dd");
+		Map<String, ArrayList<InputDataRowType>> case2events = new HashMap<String, ArrayList<InputDataRowType>>();
+		InputData data = FrameworkMain.inputDataSet.get(inputDataKey);
+		TreeMap<Long, Integer> day2casesSize = new TreeMap<Long, Integer>();
+		ArrayList<InputDataRowType> rows = data.getDataForLog();
+		for (InputDataRowType it : rows) {
+			String key = it.getVisitId();
+			if (case2events.containsKey(key)) {
+				case2events.get(key).add(it);
+			} else {
+				ArrayList<InputDataRowType> array = new ArrayList<InputDataRowType>();
+				array.add(it);
+				case2events.put(key, array);
+			}
+		}
+		for (Map.Entry<String, ArrayList<InputDataRowType>> entry : case2events.entrySet()) {
+			Collections.sort(entry.getValue(), com);
+		}
+		
+		final String[] tableHead = new String[6];
+		tableHead[0]="就诊号码";
+		tableHead[1]="诊疗项目";
+		tableHead[2]="项目类别";
+		tableHead[3]="数量";
+		tableHead[4]="单价";
+		tableHead[5]="日期";
+		ArrayList<String[]> rowsVis=new ArrayList<>();
+		for (Map.Entry<String, ArrayList<InputDataRowType>> entry : case2events.entrySet()) {
+			String[] strs=new String[6];
+			for(InputDataRowType it:entry.getValue()){
+				strs[0]=it.getVisitId();
+				strs[1]=it.getEvent();
+				strs[2]=it.getEventClass();
+				strs[3]=it.getNum().toString();
+				strs[4]=it.getPrice().toString();
+				strs[5]=df.format(it.getTime()).toString();
+			}
+			rowsVis.add(strs);
+			
+		}
+		
+		ObservableList<ObservableList<String>> topic2ItemsData = FXCollections.observableArrayList();
+		for (String[] row : rowsVis) {
+			topic2ItemsData.add(FXCollections.observableArrayList(row));
+		}
+		TableView<ObservableList<String>> topic2ItemsTV = new TableView<>();
+		topic2ItemsTV.setItems(topic2ItemsData);
+		for (int i = 0; i < tableHead.length; i++) {
+			final int curCol = i;
+			final TableColumn<ObservableList<String>, String> column = new TableColumn<>(tableHead[curCol]);
+			column.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(curCol)));
+			topic2ItemsTV.getColumns().add(column);
+		}
+		return topic2ItemsTV;
 	}
 
 	public static void main(String[] args) {

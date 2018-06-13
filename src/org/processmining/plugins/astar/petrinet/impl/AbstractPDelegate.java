@@ -45,6 +45,7 @@ import nl.tue.astar.util.ShortShortMultiset;
 import nl.tue.storage.EqualOperation;
 import nl.tue.storage.HashOperation;
 import outlier.cost.ComputeCostBasedOnFreq;
+import outlier.util.Param;
 
 public abstract class AbstractPDelegate<T extends Tail> implements StorageAwareDelegate<PHead, T> {
 
@@ -160,8 +161,11 @@ public abstract class AbstractPDelegate<T extends Tail> implements StorageAwareD
 		
 		computeCost = new ComputeCostBasedOnFreq();
 		try{
-			computeCost.initPreMapping("data/OutlierDetection/replay/pre.csv");
-			computeCost.getEventSeqForEachPatient("data/OutlierDetection/cluster/paper_log.csv");
+			computeCost.initPreMapping(Param.prePath);
+//			computeCost.getEventSeqForEachPatientAfterAlign(Param.alignRePath);
+			computeCost.getEventSeqForEachPatient(Param.logPath);
+//			computeCost.getEventSeqForEachPatient(Param.outlierLogPath);
+//			computeCost.getEventSeqForEachPatient("data/OutlierDetection/cluster/paper_log.csv");
 			computeCost.removeOneLoop();
 		}catch(Exception e){
 			e.printStackTrace();

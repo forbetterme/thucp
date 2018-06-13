@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import org.processmining.models.graphbased.directed.petrinet.elements.Transition;
 
@@ -28,7 +29,7 @@ public class PRecord implements Record {
 	protected double estimate; //           8 bytes
 	protected final int cost; //         8 bytes
 	protected final PRecord predecessor; // 8 bytes
-	protected final int logMove; //         4 bytes //ÊÇtraceÖÐµÄactivity¶ÔÓ¦µÄÏÂ±ê
+	protected final int logMove; //         4 bytes //ï¿½ï¿½traceï¿½Ðµï¿½activityï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Â±ï¿½
 	protected final int modelMove; //       4 bytes 
 	protected final int backtrace; //       4 bytes
 	protected final BitMask executed;
@@ -99,11 +100,14 @@ public class PRecord implements Record {
 
 		//added by weizhijie
 //		System.out.println("*");
+//		activity=movedEvent;
+//		if(activity>=0)
+//		System.out.println(trace.get(movedEvent)+","+activity);
 		int c = -1;
 		int flag = -1;
 		if (modelMove == AStarThread.NOMOVE)
 			flag = 0;//LogMove only
-		else if (activity == AStarThread.NOMOVE)
+		else if (movedEvent == AStarThread.NOMOVE)
 			flag = 1;//ModelMove only
 		else
 			flag = 2;//both
@@ -115,7 +119,7 @@ public class PRecord implements Record {
 			} else {
 				String cu = tCu.getLabel();
 				if (cu.equals("e")) {
-					c = (int) (1000 * delegate.getDelta() + delegate.getEpsilon());
+					c = (int) ((1000 * delegate.getDelta()) + delegate.getEpsilon());
 				} else {
 					Set<String> targetPre = new HashSet<String>();
 					Set<String> cuAllPre = delegate.computeCost.getPre().get(cu);
@@ -128,6 +132,9 @@ public class PRecord implements Record {
 						}
 						pre = pre.predecessor;
 					}
+//					if(trace.getLabel().equals("3ADAA1EE7B01BE1B4B3AFB14C88D96AB")&&cu.equals("9")){
+//						System.out.println(targetPre+","+cu+","+delegate.computeCost.costOfTargetEventAfterPre(targetPre, cu) * delegate.getDelta());
+//					}
 					c = (int) (delegate.computeCost.costOfTargetEventAfterPre(targetPre, cu) * delegate.getDelta()
 							+ delegate.getEpsilon());
 				}
@@ -139,12 +146,40 @@ public class PRecord implements Record {
 				PRecord pre = this.predecessor;
 				while (pre != null) {
 					if (pre.modelMove >= 0 && !delegate.int2trans.get((short) pre.modelMove).isInvisible())
+//					if ((pre.modelMove >= 0 && pre.logMove >= 0 && !delegate.int2trans.get((short) pre.modelMove).isInvisible())||
+//							(pre.modelMove==AStarThread.NOMOVE&&pre.logMove>=0))
 						break;
 					pre = pre.predecessor;
 				}
 				if (pre != null) {
 					String tar = delegate.int2trans.get((short) pre.modelMove).getLabel();
 					String cu = delegate.int2act.get((short) activity).getId();
+//					if(trace.getLabel().equals("3ADAA1EE7B01BE1B4B3AFB14C88D96AB")&&cu.equals("0")){
+//						System.out.println(tar+","+cu);
+//						Stack<PRecord> stack=new Stack<PRecord>();
+//						PRecord it = this.predecessor;
+//						while (it != null) {
+//							if ((it.modelMove >= 0 && !delegate.int2trans.get((short) it.modelMove).isInvisible())||
+//									(it.logMove >= 0)){
+//								stack.push(it);
+//							}
+//							it = it.predecessor;
+//						}
+//						while(!stack.empty()){
+//							PRecord p=stack.pop();
+//							if(p.logMove>=0&&p.modelMove>=0){
+//								System.out.print("("+delegate.int2trans.get((short) p.modelMove).getLabel()+","+"f)->");
+//							}else if(p.logMove>=0&&p.modelMove==AStarThread.NOMOVE){
+//								System.out.print("("+delegate.int2act.get((short) p.logMove).getId()+","+"i)->");
+//							}else{
+//								System.out.print("("+delegate.int2trans.get((short) p.modelMove).getLabel()+","+"s)->");
+//							}
+//						}
+//						System.out.println();
+//					}
+//					if(trace.getLabel().equals("3ADAA1EE7B01BE1B4B3AFB14C88D96AB")&&cu.equals("0")){
+//						System.out.println(tar+","+cu+","+delegate.computeCost.costOfTargetEventAfterPre(tar, cu) * delegate.getDelta());
+//					}
 					c = (int) (delegate.computeCost.costOfTargetEventAfterPre(tar, cu) * delegate.getDelta()
 							+ delegate.getEpsilon());
 				} else {
@@ -164,7 +199,7 @@ public class PRecord implements Record {
 		//
 		//				PRecord pre = this.predecessor;
 		//				while (pre != null && pre.modelMove >= 0
-		//						&& delegate.int2trans.get((short) pre.modelMove).isInvisible()) {//ºöÂÔ²»¿É¼û
+		//						&& delegate.int2trans.get((short) pre.modelMove).isInvisible()) {//ï¿½ï¿½ï¿½Ô²ï¿½ï¿½É¼ï¿½
 		//					pre = pre.predecessor;
 		//				}
 		//				if (pre != null && pre.logMove >= 0 && pre.modelMove == AStarThread.NOMOVE) {
@@ -201,10 +236,10 @@ public class PRecord implements Record {
 		//				PRecord pre=this.predecessor;
 		//				while(true){
 		//					if(pre==null) break;
-		//					if(flag==0){//Èç¹ûµ±Ç°ÊÇlogmove£¬¼´²åÈëÒ»¸ö»î¶¯¡£ÐèÒªÏòÇ°ÕÒµ½Ò»¸ölogmove¡¢synmove»òÕßmodelmove£¨¿É¼û½ÚµãµÄmodelmove£©
+		//					if(flag==0){//ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½logmoveï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½î¶¯ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ç°ï¿½Òµï¿½Ò»ï¿½ï¿½logmoveï¿½ï¿½synmoveï¿½ï¿½ï¿½ï¿½modelmoveï¿½ï¿½ï¿½É¼ï¿½ï¿½Úµï¿½ï¿½modelmoveï¿½ï¿½
 		//						if(pre.logMove>=0||delegate.int2trans.get((short)pre.modelMove).isInvisible()==false)
 		//							break;
-		//					}else if(flag==1){//Èç¹ûµ±Ç°ÊÇmodelmove£¬¼´Ìø¹ýÒ»¸ö»î¶¯¡£ÐèÒªÏòÇ°ÕÒÒ»¸ömodelmove
+		//					}else if(flag==1){//ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½modelmoveï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½î¶¯ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ç°ï¿½ï¿½Ò»ï¿½ï¿½modelmove
 		//						if((pre.logMove>=0&&pre.modelMove>=0)||
 		//								(pre.logMove==AStarThread.NOMOVE&&pre.modelMove>=0&&delegate.int2trans.get((short)pre.modelMove).isInvisible()==false))
 		//							break;

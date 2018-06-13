@@ -1,8 +1,11 @@
 package test;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.deckfour.xes.classification.XEventClass;
 import org.deckfour.xes.classification.XEventClassifier;
@@ -30,7 +33,9 @@ import org.processmining.log.csvimport.config.CSVConversionConfig.CSVEmptyCellHa
 import org.processmining.log.csvimport.config.CSVConversionConfig.CSVErrorHandlingMode;
 import org.processmining.log.csvimport.config.CSVConversionConfig.CSVMapping;
 import org.processmining.log.csvimport.config.CSVConversionConfig.Datatype;
+import org.processmining.models.graphbased.directed.petrinet.Petrinet;
 import org.processmining.models.graphbased.directed.petrinet.PetrinetGraph;
+import org.processmining.models.graphbased.directed.petrinet.PetrinetNode;
 import org.processmining.models.graphbased.directed.petrinet.elements.Place;
 import org.processmining.models.graphbased.directed.petrinet.elements.Transition;
 import org.processmining.models.graphbased.directed.petrinet.impl.PetrinetFactory;
@@ -51,6 +56,9 @@ import org.processmining.plugins.replayer.replayresult.SyncReplayResult;
 import com.google.common.collect.ImmutableList;
 
 import nl.tue.astar.AStarException;
+import outlier.evaluate.SimulationEvaluate;
+import outlier.evaluate.ConstructPetriNet;
+import outlier.util.Param;
 
 public class AlignmentTest {
 
@@ -66,7 +74,10 @@ public class AlignmentTest {
 	//	}
 
 	public static void main(String[] args) throws Exception {
-		test(args);
+		if(Param.ifSimulate==0)
+			test(args);//普通对齐
+		else
+			testSimulation(args);//仿真部分对齐
 	}
 
 	public static void test(String[] args) throws Exception {
@@ -86,7 +97,9 @@ public class AlignmentTest {
 		////		controller.getMainView().getWorkspaceView().showFavorites();
 		////		globalContext.startup();
 
-		File file = new File("D:/data4code/bestlog.csv");
+//		File file = new File("D:/data4code/bestlog.csv");
+		File file = new File(Param.logPath);
+//		File file = new File(Param.rawLogPath);
 		CSVFileReferenceUnivocityImpl csvFile = new CSVFileReferenceUnivocityImpl(file.toPath());
 		CSVConfig config = new CSVConfig(csvFile);
 		try (ICSVReader reader = csvFile.createReader(config)) {
@@ -101,7 +114,7 @@ public class AlignmentTest {
 			Map<String, CSVMapping> conversionMap = conversionConfig.getConversionMap();
 			CSVMapping mapping = conversionMap.get("time");
 			mapping.setDataType(Datatype.TIME);
-			mapping.setPattern("yyyy/MM/dd");
+			mapping.setPattern("yyyy-MM-dd");
 
 			final ProgressListener progressListener = new NoOpProgressListenerImpl();
 			ConversionResult<XLog> result = conversion.doConvertCSVToXES(progressListener, csvFile, config,
@@ -120,8 +133,9 @@ public class AlignmentTest {
 //			insComputeCostBasedOnFreq.removeOneLoop();
 
 			PetrinetGraph net = (PetrinetGraph) re[0];
-			Marking initialMarking = (Marking) re[1];
+			Marking initialMarking = (Marking) re[1];System.out.println(initialMarking.toString());
 			Marking[] finalMarkings = { (Marking) re[2] }; // only one marking is used so far
+			System.out.println(finalMarkings.length+","+finalMarkings[0].toString());
 			Map<Transition, Integer> costMOS = null; // movements on system
 			Map<XEventClass, Integer> costMOT = null; // movements on trace
 			TransEvClassMapping mappingTransEvClassMapping = null;
@@ -139,6 +153,107 @@ public class AlignmentTest {
 			costMOS = constructMOSCostFunction(net);
 			int cost1 = AlignmentTest.computeCost(costMOS, costMOT, initialMarking, finalMarkings, context, net, log,
 					mappingTransEvClassMapping, false);
+			System.out.println(cost1);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void testSimulation(String[] args) throws Exception {
+		PackageManager packages = PackageManager.getInstance();
+		PluginManagerImpl.initialize(UIPluginContext.class);
+		UIContext globalContext;
+		globalContext = new UIContext();
+		globalContext.initialize();
+
+//		File file = new File("D:/data4code/bestlog.csv");
+		Param.logPath=Param.outlierLogPath;
+//		Param.logPath=Param.rawLogPath;//测试生成的原始序列是否能够100%匹配过程模型
+		File file = new File(Param.logPath);
+		CSVFileReferenceUnivocityImpl csvFile = new CSVFileReferenceUnivocityImpl(file.toPath());
+		CSVConfig config = new CSVConfig(csvFile);
+		try (ICSVReader reader = csvFile.createReader(config)) {
+			CSVConversion conversion = new CSVConversion();
+			CSVConversionConfig conversionConfig = new CSVConversionConfig(csvFile, config);
+			conversionConfig.autoDetect();
+			conversionConfig.setCaseColumns(ImmutableList.of("case"));
+			conversionConfig.setEventNameColumns(ImmutableList.of("event"));
+			conversionConfig.setCompletionTimeColumn("time");
+			conversionConfig.setEmptyCellHandlingMode(CSVEmptyCellHandlingMode.SPARSE);
+			conversionConfig.setErrorHandlingMode(CSVErrorHandlingMode.ABORT_ON_ERROR);
+			Map<String, CSVMapping> conversionMap = conversionConfig.getConversionMap();
+			CSVMapping mapping = conversionMap.get("time");
+			mapping.setDataType(Datatype.TIME);
+			mapping.setPattern("yyyy-MM-dd");
+
+			final ProgressListener progressListener = new NoOpProgressListenerImpl();
+			ConversionResult<XLog> result = conversion.doConvertCSVToXES(progressListener, csvFile, config,
+					conversionConfig);
+			XLog log = result.getResult();
+			System.out.println(log.size());
+			PluginContext context = globalContext.getMainPluginContext();
+			IMPetriNet ins = new IMPetriNet();
+//			Object[] re = ins.minePetriNet(context, log, new MiningParametersIMi());
+
+			AbstractPILPDelegate.setDebugMode(null);
+
+//			ComputeCostBasedOnFreq insComputeCostBasedOnFreq = new ComputeCostBasedOnFreq();
+//			insComputeCostBasedOnFreq.initPreMapping("D:/data4code/replay/pre.csv");
+//			insComputeCostBasedOnFreq.getEventSeqForEachPatient("D:/data4code/cluster/LogBasedOnKmeansPlusPlus-14.csv");
+//			insComputeCostBasedOnFreq.removeOneLoop();
+
+			ConstructPetriNet visualPNet=new ConstructPetriNet();
+			PetrinetGraph net = (PetrinetGraph) visualPNet.getNet();
+			
+//			Set<PetrinetNode> nodes=net.getNodes();
+//			for(PetrinetNode it:nodes){
+//				System.out.println(it.getLabel());
+//			}
+//			Collection<Transition> Transitions=net.getTransitions();
+//			for(Transition it:Transitions){
+//				System.out.println(it.getLabel());
+//			}
+			
+			Collection<Place> initialPlace=new ArrayList<Place>();
+			Collection<Place> places=net.getPlaces();
+			for(Place it:places){
+				if(it.getLabel().equals("start")){
+					initialPlace.add(it);
+				}
+			}
+			Marking initialMarking = (Marking) new Marking(initialPlace);
+			
+			Collection<Place> finalPlace=new ArrayList<Place>();
+			places=net.getPlaces();
+			for(Place it:places){
+				if(it.getLabel().equals("end")){
+					finalPlace.add(it);
+				}
+			}
+			Marking[] finalMarkings = { (Marking) new Marking(finalPlace) }; // only one marking is used so far
+			
+			Map<Transition, Integer> costMOS = null; // movements on system
+			Map<XEventClass, Integer> costMOT = null; // movements on trace
+			TransEvClassMapping mappingTransEvClassMapping = null;
+			//			XParserRegistry temp=XParserRegistry.instance();
+			//			temp.setCurrentDefault(new XesXmlParser());
+			//			log = temp.currentDefault().parse(new File("D:/data4code/mm.xes")).get(0);
+			//			log = XParserRegistry.instance().currentDefault().parse(new File("d:/temp/BPI2013all90.xes.gz")).get(0);
+			//			log = XParserRegistry.instance().currentDefault().parse(new File("d:/temp/BPI 730858110.xes.gz")).get(0);
+			//			log = XFactoryRegistry.instance().currentDefault().openLog();
+			costMOS = constructMOSCostFunction(net);
+			XEventClass dummyEvClass = new XEventClass("DUMMY", 99999);
+			XEventClassifier eventClassifier = XLogInfoImpl.NAME_CLASSIFIER;
+			costMOT = constructMOTCostFunction(net, log, eventClassifier, dummyEvClass);
+			mappingTransEvClassMapping = constructMapping(net, log, dummyEvClass, eventClassifier);
+			costMOS = constructMOSCostFunction(net);
+			int cost1 = AlignmentTest.computeCost(costMOS, costMOT, initialMarking, finalMarkings, context, net, log,
+					mappingTransEvClassMapping, false);
+			
+			SimulationEvaluate simu=new SimulationEvaluate();
+			simu.computeRecallAndAccuracy(Param.stdAlignPath, Param.alignPath);
+			
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

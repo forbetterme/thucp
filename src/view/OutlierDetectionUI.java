@@ -128,7 +128,7 @@ public class OutlierDetectionUI {
 				
 				grid.add(new Label("K: "), 0, 0); // row 1
 				grid.add(KofKmeans, 1, 0);
-				grid.add(new Label("Kmeans运行次数: "), 0, 1); // row 1
+				grid.add(new Label("Kmeans最大迭代次数: "), 0, 1); // row 1
 				grid.add(KmeansRoundTimesParam, 1, 1);
 				dialog.getDialogPane().setContent(grid);
 				Platform.runLater(() -> KofKmeans.requestFocus());

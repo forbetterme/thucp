@@ -61,35 +61,60 @@ public class PNRepResultImpl extends TreeSet<SyncReplayResult> implements PNRepR
 	 */
 	public PNRepResultImpl(Collection<SyncReplayResult> col) {
 		super(new Comparator<SyncReplayResult>() {
-			public int compare(SyncReplayResult o1, SyncReplayResult o2) {
-//				return o1.getInfo().get("Trace Fitness").compareTo(o2.getInfo().get("Trace Fitness"));
-				SortedSet<Integer> s1 = o1.getTraceIndex();
-				SortedSet<Integer> s2 = o2.getTraceIndex();
-				if (o1.isReliable() && !o2.isReliable()) {
-					return -1;
+			public int compare(SyncReplayResult o1, SyncReplayResult o2) {//等于的情况（返回0）下会只显示一部分
+//				return 0;
+//				return 1;
+//				return -1;
+				
+//				Double o2Value=o2.getInfo().get("Move-Log Fitness")+o2.getInfo().get("Move-Model Fitness");
+//				Double o1Value=o1.getInfo().get("Move-Log Fitness")+o1.getInfo().get("Move-Model Fitness");
+//				if(o2Value.equals(o1Value)){
+//					if(o1.getInfo().get("Trace Length").equals(o2.getInfo().get("Trace Length")))
+//						return 1;
+//					else
+//						return o2.getInfo().get("Trace Length").compareTo(o1.getInfo().get("Trace Length"));
+//						
+//				}
+//				return o1Value.compareTo(o2Value);
+				
+//				return o1.getTraceIndex().first()-o2.getTraceIndex().first();
+				
+				if(o1.getInfo().get("Trace Fitness").compareTo(o2.getInfo().get("Trace Fitness"))==0){
+					if(o1.getInfo().get("Trace Length").equals(o2.getInfo().get("Trace Length")))
+						return 1;
+					else
+						return o2.getInfo().get("Trace Length").compareTo(o1.getInfo().get("Trace Length"));
+				}else{
+					return o1.getInfo().get("Trace Fitness").compareTo(o2.getInfo().get("Trace Fitness"));
 				}
-				if (!o1.isReliable() && o2.isReliable()) {
-					return 1;
-				}
-				if (s1.size() != s2.size()) {
-					return s2.size() - s1.size();
-				}
-				if (o1.equals(o2)) {
-					return 0;
-				}
-				if (o1.getStepTypes().size() != o2.getStepTypes().size()) {
-					return o2.getStepTypes().size() - o1.getStepTypes().size();
-				}
-				Iterator<Integer> it1 = s1.iterator();
-				Iterator<Integer> it2 = s2.iterator();
-				while (it1.hasNext()) {
-					Integer ss1 = it1.next();
-					Integer ss2 = it2.next();
-					if (!ss1.equals(ss2)) {
-						return ss1.compareTo(ss2);
-					}
-				}
-				return 0;
+				
+//				SortedSet<Integer> s1 = o1.getTraceIndex();
+//				SortedSet<Integer> s2 = o2.getTraceIndex();
+//				if (o1.isReliable() && !o2.isReliable()) {
+//					return -1;
+//				}
+//				if (!o1.isReliable() && o2.isReliable()) {
+//					return 1;
+//				}
+//				if (s1.size() != s2.size()) {
+//					return s2.size() - s1.size();
+//				}
+//				if (o1.equals(o2)) {
+//					return 0;
+//				}
+//				if (o1.getStepTypes().size() != o2.getStepTypes().size()) {
+//					return o2.getStepTypes().size() - o1.getStepTypes().size();
+//				}
+//				Iterator<Integer> it1 = s1.iterator();
+//				Iterator<Integer> it2 = s2.iterator();
+//				while (it1.hasNext()) {
+//					Integer ss1 = it1.next();
+//					Integer ss2 = it2.next();
+//					if (!ss1.equals(ss2)) {
+//						return ss1.compareTo(ss2);
+//					}
+//				}
+//				return 0;
 			}
 
 		});

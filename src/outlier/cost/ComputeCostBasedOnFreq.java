@@ -16,6 +16,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import outlier.util.Param;
+
 
 public class ComputeCostBasedOnFreq {
 	Comparator<Event> com = new Comparator<Event>() {
@@ -34,14 +36,14 @@ public class ComputeCostBasedOnFreq {
 
 	public static void main(String[] args) throws Exception {
 		ComputeCostBasedOnFreq ins = new ComputeCostBasedOnFreq();
-		 ins.initPreMapping("D:/data4code/replay/pre.csv");
+		 ins.initPreMapping(Param.prePath);
 		// for(Map.Entry<String,HashSet<String>> it:ins.pre.entrySet()){
 		// for(String s:it.getValue()){
 		// System.out.print(s+" ");
 		// }
 		// System.out.println();
 		// }
-		ins.getEventSeqForEachPatient("D:/data4code/cluster/LogBasedOnKmeansPlusPlus-14.csv");
+		ins.getEventSeqForEachPatient(Param.logPath);
 		ins.removeOneLoop();
 //		ins.splitLog();
 //		for (Map.Entry<String, ArrayList<Event>> entry : ins.patientId2events.entrySet()) {
@@ -59,7 +61,17 @@ public class ComputeCostBasedOnFreq {
 //		set1.add("13");
 //		String tar="e";
 //		System.out.println(ins.countFreqTargetEventAfterPre(set1, tar));
-//		System.out.println(ins.costOfTargetEventAfterPre(set1, tar));
+		Set<String> set1=new HashSet<String>();
+		set1.add("6");
+//		System.out.println(ins.costOfTargetEventAfterPre(set1, "9"));
+//		System.out.println(ins.costOfTargetEventAfterPre("8","0"));
+//		System.out.println(ins.costOfTargetEventAfterPre("9","0"));
+//		System.out.println(ins.costOfTargetEventAfterPre("4","0"));
+//		System.out.println(ins.countFreqCuNeverOccurAfterTarget("8","0"));
+//		System.out.println(ins.countFreqCuNeverOccurAfterTarget("9","0"));
+//		System.out.println(ins.countFreqCuNeverOccurAfterTarget("4","0"));
+		System.out.println(ins.countFreqTargetEventAfterPre(set1, "0"));
+		System.out.println(ins.countFreqCuNeverOccurAfterTarget("9","10"));
 	}
 
 	public void initPreMapping(String preMappingFilePath) throws IOException {
@@ -95,7 +107,7 @@ public class ComputeCostBasedOnFreq {
 		File f = new File(inPath);
 		BufferedReader read = new BufferedReader(new FileReader(f));
 		String line = read.readLine();
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		while ((line = read.readLine()) != null) {
 			String[] strs = line.split(",");
 			String caseId = strs[0];
@@ -131,6 +143,30 @@ public class ComputeCostBasedOnFreq {
 			}
 		}
 	}
+	
+	public void getEventSeqForEachPatientAfterAlign(String inPath) throws Exception {
+		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+		File f = new File(inPath);
+		BufferedReader read = new BufferedReader(new FileReader(f));
+		String line ;
+		while ((line = read.readLine()) != null) {
+			String[] strs = line.split(",");
+			String caseId = strs[0];
+			ArrayList<Event> temp = new ArrayList<Event>();
+			for(int i=1;i<strs.length;i++){
+				if(strs[i].contains("LMGOOD")||strs[i].contains("MREAL")){
+					allEventLabels.add(strs[i].split("#")[0]);
+					Event e = new Event(caseId, strs[i].split("#")[0],  df.parse("1900/01/01"));
+					temp.add(e);
+				}
+			}
+			if(temp.size()==0)
+				System.out.println(caseId);
+			patientId2events.put(caseId, temp);
+		}
+		read.close();
+	}
+	
 	public void splitLog() throws IOException{
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		File outFile=new File("D:/data4code/cluster/LogBasedOnKmeansPlusPlus-0-99.csv");
@@ -230,15 +266,7 @@ public class ComputeCostBasedOnFreq {
 		}
 		return -1;
 	}
-	public double costOfTargetEventAfterPre(Set<String> targetPre,String cuEvent){
-		int count=countFreqTargetEventAfterPre(targetPre, cuEvent);
-		if(count==0) count=1;
-		double p=(count*1.0)/patientId2events.size();
-		double cost=1+Math.log(1/p);
-//		System.out.println(cost);
-//		return 1;
-		return cost;
-	}
+	
 	public Comparator<Event> getCom() {
 		return com;
 	}
@@ -259,22 +287,60 @@ public class ComputeCostBasedOnFreq {
 		return cacheForFreq;
 	}
 
+//	public int countFreqTargetEventAfterPre(Set<String> targetPre,String cuEvent){
+//		String key=getKeyOfTargetPreAndCuEvent(targetPre, cuEvent);
+//		if(cacheForFreq.containsKey(key))
+//			return cacheForFreq.get(key);
+//		int count=0;
+//		for (Map.Entry<String, ArrayList<Event>> entry : patientId2events.entrySet()) {
+//			int index=getLastIndexOfTargetPre(targetPre,cuEvent,entry.getKey());
+//			ArrayList<Event> seq=entry.getValue();
+//			if(index>0){
+//				for(int i=index+1;i<seq.size();i++){
+//					if(seq.get(i).label.equals(cuEvent)){
+//						count++;
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		cacheForFreq.put(key, count);
+//		return count;
+//	}
+	
 	public int countFreqTargetEventAfterPre(Set<String> targetPre,String cuEvent){
 		String key=getKeyOfTargetPreAndCuEvent(targetPre, cuEvent);
 		if(cacheForFreq.containsKey(key))
 			return cacheForFreq.get(key);
+		Set<String> cuStaticPre=pre.get(cuEvent); 
+		Set<String> cuPre=new HashSet<String>();
 		int count=0;
 		for (Map.Entry<String, ArrayList<Event>> entry : patientId2events.entrySet()) {
-			int index=getLastIndexOfTargetPre(targetPre,cuEvent,entry.getKey());
 			ArrayList<Event> seq=entry.getValue();
+			int index=0;
+			for(index=seq.size()-1;index>=0;index--){
+				if(seq.get(index).label.equals(cuEvent))
+					break;
+			}
 			if(index>0){
-				for(int i=index+1;i<seq.size();i++){
-					if(seq.get(i).label.equals(cuEvent)){
-						count++;
+				for(int i=index-1;i>=0;i--){
+					if(cuStaticPre.contains(seq.get(i).label)){
+						cuPre.add(seq.get(i).label);
+					}
+				}
+			}
+			int flag=0;
+			if(cuPre.size()==targetPre.size()){
+				flag=1;
+				for(String it:cuPre){
+					if(!targetPre.contains(it)){
+						flag=0;
 						break;
 					}
 				}
 			}
+			if(flag==1)
+				count++;
 		}
 		cacheForFreq.put(key, count);
 		return count;
@@ -292,19 +358,61 @@ public class ComputeCostBasedOnFreq {
 			}
 			for(i=i+1;i<seq.size();i++)
 				temp.add(seq.get(i).getLabel());
-			if(!temp.contains(cu))
+			if(temp.size()!=0&&!temp.contains(cu))
 				count++;
 		}
 		if(count==0) count=1;
 		cacheForFreqInsert.put(tar+"#"+cu, count);
 		return count;
 	}
+//	public int countFreqCuNeverOccurAfterTarget(String tar,String cu){
+//		if(cacheForFreqInsert.containsKey(tar+"#"+cu))
+//			return cacheForFreqInsert.get(tar+"#"+cu);
+//		int count=0;
+//		for (Map.Entry<String, ArrayList<Event>> entry : patientId2events.entrySet()) {
+//			ArrayList<Event> seq=entry.getValue();
+//			Set<String> temp=new HashSet<String>();
+//			int i=0;
+//			for(i=0;i<seq.size();i++){
+//				if(seq.get(i).getLabel().equals(tar)) break;
+//			}
+//			for(i=i+1;i<seq.size();i++)
+//				temp.add(seq.get(i).getLabel());
+//			if(!temp.contains(cu))
+//				count++;
+//		}
+//		if(count==0) count=1;
+//		cacheForFreqInsert.put(tar+"#"+cu, count);
+//		return count;
+//	}
+	public double costOfTargetEventAfterPre(Set<String> targetPre,String cuEvent){
+		int count=countFreqTargetEventAfterPre(targetPre, cuEvent);
+		if(count==0) count=1;
+		double p=(count*1.0)/patientId2events.size();
+//		double cost=1+1-p;
+//		double cost=1+1*Math.log(1/p)/Math.log(Param.traceNum);
+		double cost=1+1*Math.log(1/p);
+//		System.out.println(cost);
+//		if(count>10)
+//		System.out.println(count);
+		if(Param.ifAdvance==0)
+			return 1;
+		else
+			return cost;
+	}
 	public double costOfTargetEventAfterPre(String tar,String cu){
 		int count=countFreqCuNeverOccurAfterTarget(tar, cu);
 		double p=(count*1.0)/patientId2events.size();
-		double cost=1+Math.log(1/p);
-//		return 1;
-		return cost;
+//		double cost=1+1-p;
+//		double cost=1+1*Math.log(1/p)/Math.log(Param.traceNum);
+		double cost=1+1*Math.log(1/p);
+//		System.out.println(cost);
+//		if(count>2)
+//			System.out.println(count);
+		if(Param.ifAdvance==0)
+			return 1;
+		else
+			return cost;
 	}
 	public String getKeyOfTargetPreAndCuEvent(Set<String> targetPre,String cuEvent){
 		ArrayList<String> arrayForSort=new ArrayList<String>();

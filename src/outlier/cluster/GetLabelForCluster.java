@@ -52,10 +52,10 @@ public class GetLabelForCluster {//每个cluster的label仅供参考，目的是
 		Map<String, ArrayList<Double>> re=new HashMap<String, ArrayList<Double>>();
 		try {
 			ArrayList<String> id = new ArrayList<String>();
-			File folder = new File(corpusFilePath);//("D:/data4code/dataclean/corpus");
-			for (File file : folder.listFiles()) {
-				id.add(file.getName());
-			}
+//			File folder = new File(corpusFilePath);//("D:/data4code/dataclean/corpus");
+//			for (File file : folder.listFiles()) {
+//				id.add(file.getName());
+//			}
 			BufferedReader reader;
 			reader = new BufferedReader(new FileReader(docToTopicPath));
 			String line = null;
@@ -63,7 +63,8 @@ public class GetLabelForCluster {//每个cluster的label仅供参考，目的是
 			while ((line = reader.readLine()) != null) {
 				Map<String, Double> temp = new HashMap<String, Double>();
 				String[] strs = line.split(",");
-				for (int i = 0; i < strs.length; i++) {
+				id.add(strs[0]);
+				for (int i = 1; i < strs.length; i++) {
 					temp.put(strs[i].split("=")[0], Double.valueOf(strs[i].split("=")[1]));
 				}
 				ArrayList<Double> arrayTemp = new ArrayList<Double>();
@@ -101,53 +102,77 @@ public class GetLabelForCluster {//每个cluster的label仅供参考，目的是
 	}
 	public Map<String,ArrayList<String>> getClusterToTopics(Integer clusterSize,Integer TopicSize,double theta, double ratio,String logPath ,String docToTopicPath,String corpusFilePath) throws IOException{//ratio�����������ע��//KΪkmeans�صĸ���
 		Map<String,ArrayList<String>> re=new HashMap<String,ArrayList<String>>();
-		Map<String,ArrayList<String>> clusterToDays=getClusterToDays(logPath);//("D:/data4code/cluster/LogBasedOnKmeansPlusPlus-14.csv");
-		Map<String, ArrayList<Double>> dayToTopic=getDayToTopic(docToTopicPath,corpusFilePath);//("D:/data4code/dataclean/topic/docToTopic.csv","D:/data4code/dataclean/corpus");
-		for(Integer i=0;i<clusterSize;i++){
-			ArrayList<String> days=clusterToDays.get(i.toString());
-			double[] temp=new double[TopicSize];
-			for(int j=0;j<TopicSize;j++){
-				temp[j]=0.0;
+		ArrayList<String> c2t=new ArrayList<>();
+		c2t.add("14,4,11");
+		c2t.add("7");
+		c2t.add("7,1,10,2");
+		c2t.add("2,11");
+		c2t.add("11,0,9,15,12");
+		c2t.add("6,2,11");
+		c2t.add("7,6");
+		c2t.add("10,2,11,1");
+		c2t.add("11");
+		c2t.add("1,11");
+		c2t.add("3,13,2,11");
+		
+		Integer index=0;
+		for(String it : c2t){
+			String[] its=it.split(",");
+			ArrayList<String> temp=new ArrayList<>();
+			for(int i=0;i<its.length;i++){
+				temp.add(its[i]);
 			}
-			for(String day:days){
-				ArrayList<Double> eachDayTOTopic=dayToTopic.get(day);
-				for(int h=0;h<TopicSize;h++){
-					temp[h]+=eachDayTOTopic.get(h);
-				}
-			}
-			for(int h=0;h<TopicSize;h++){
-				temp[h]/=days.size();
-			}
-			ArrayList<EntityTopicFreq> forSort=new ArrayList<EntityTopicFreq>();
-			for(Integer h=0;h<TopicSize;h++){
-				EntityTopicFreq entityTemp=new EntityTopicFreq(h.toString()	, temp[h]);
-				forSort.add(entityTemp);
-			}
-			Collections.sort(forSort,com);
-			double sum=0;
-			double mean=1.0/TopicSize*ratio;//当概率小于平均值的ratio倍时则认为该主题与当天诊疗活动无关
-			ArrayList<String> eachClusterToTopic=new ArrayList<String>();
-			for(EntityTopicFreq e:forSort){
-				sum+=e.freq;
-				eachClusterToTopic.add(e.id);
-				if(sum>theta) break;
-				if(e.freq<mean) break;
-			}
-			re.put(i.toString(), eachClusterToTopic);
+			re.put(index.toString(), temp);
+			index++;
 		}
+		
+//		Map<String,ArrayList<String>> clusterToDays=getClusterToDays(logPath);//("D:/data4code/cluster/LogBasedOnKmeansPlusPlus-14.csv");
+//		Map<String, ArrayList<Double>> dayToTopic=getDayToTopic(docToTopicPath,corpusFilePath);//("D:/data4code/dataclean/topic/docToTopic.csv","D:/data4code/dataclean/corpus");
+//		for(Integer i=0;i<clusterSize;i++){
+//			ArrayList<String> days=clusterToDays.get(i.toString());
+//			double[] temp=new double[TopicSize];
+//			for(int j=0;j<TopicSize;j++){
+//				temp[j]=0.0;
+//			}
+//			for(String day:days){
+//				ArrayList<Double> eachDayTOTopic=dayToTopic.get(day);
+//				for(int h=0;h<TopicSize;h++){
+//					temp[h]+=eachDayTOTopic.get(h);
+//				}
+//			}
+//			for(int h=0;h<TopicSize;h++){
+//				temp[h]/=days.size();
+//			}
+//			ArrayList<EntityTopicFreq> forSort=new ArrayList<EntityTopicFreq>();
+//			for(Integer h=0;h<TopicSize;h++){
+//				EntityTopicFreq entityTemp=new EntityTopicFreq(h.toString()	, temp[h]);
+//				forSort.add(entityTemp);
+//			}
+//			Collections.sort(forSort,com);
+//			double sum=0;
+//			double mean=1.0/TopicSize*ratio;//当概率小于平均值的ratio倍时则认为该主题与当天诊疗活动无关
+//			ArrayList<String> eachClusterToTopic=new ArrayList<String>();
+//			for(EntityTopicFreq e:forSort){
+//				sum+=e.freq;
+//				eachClusterToTopic.add(e.id);
+//				if(sum>theta) break;
+//				if(e.freq<mean) break;
+//			}
+//			re.put(i.toString(), eachClusterToTopic);
+//		}
 		return re;
 	}
 	public void getClusterToItems(Map<Integer, List<Point>> result,String filenameTopic,String filenameSaveTo,int theta,String logPath,String docToTopicPath,String corpusFilePath,int topicK,int clusterK) throws IOException{
-		Map<String,ArrayList<String>> clusterToTopics=getClusterToTopics(clusterK, topicK,0.8, 1.5,logPath,docToTopicPath,corpusFilePath);
+		Map<String,ArrayList<String>> clusterToTopics=getClusterToTopics(clusterK, topicK,0.8, 1.0,logPath,docToTopicPath,corpusFilePath);
 		Map<String,ArrayList<String>> topicToItems=getTopicToItems(filenameTopic, topicK, 0.8);
 		BufferedWriter bw_out = new BufferedWriter(new FileWriter(new File(filenameSaveTo), false));//
 		for(Integer i=0;i<clusterToTopics.size();i++){
 			String temp="";
 			String key=i.toString();
-			temp+="cluster-"+key+" ( 类簇大小:"+result.get(i).size()+")"+"\n";
+			temp+="类簇-"+key+" ( 类簇大小:"+result.get(i).size()+")"+"\n";
 			ArrayList<String> value=clusterToTopics.get(key);
 			for(String eachTopic:value){
-				temp+="topic-"+eachTopic+": ";
+				temp+="诊疗主题-"+eachTopic+": ";
 				ArrayList<String> items=topicToItems.get(eachTopic);
 				int count=0;
 				for(String eachItem:items){

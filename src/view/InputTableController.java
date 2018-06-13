@@ -10,6 +10,7 @@ import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.scene.chart.LineChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -92,7 +93,7 @@ public class InputTableController implements Initializable {
 							// clickedStu.getFirstName() +
 							// clickedStu.getLastName() + " 的记录");
 							InputDataStatics ins = new InputDataStatics();
-							SwingNode sn=ins.getStayDistribution(clickedInputData.getKey());
+							LineChart<Number, Number> sn=ins.getStayDistribution(clickedInputData.getKey());
 							Text t = ins.computeStatics(clickedInputData.getKey());
 							ScrollPane spText = new ScrollPane();
 							spText.setContent(t);
@@ -106,20 +107,38 @@ public class InputTableController implements Initializable {
 							vb.getChildren().add(sn);
 							
 							
+							
 							Tab inputsSatics = null;
 							for (int i = 0; i < inputTabPane.getTabs().size(); i++) {
 								String title = inputTabPane.getTabs().get(i).getText();
-								if (title.equals(clickedInputData.getKey())) {
+								if (title.equals("统计结果-"+clickedInputData.getKey())) {
 									inputsSatics = inputTabPane.getTabs().get(i);
 									inputsSatics.setContent(vb);
 									inputTabPane.getSelectionModel().select(inputsSatics);
 								}
 							}
 							if (inputsSatics == null) {
-								inputsSatics = new Tab(clickedInputData.getKey());
+								inputsSatics = new Tab("统计结果-"+clickedInputData.getKey());
 								inputsSatics.setContent(vb);
 								inputTabPane.getTabs().add(inputsSatics);
 								inputTabPane.getSelectionModel().select(inputsSatics);
+							}
+							
+							TableView<ObservableList<String>> tv=ins.getDetails(clickedInputData.getKey());
+							Tab inputsDetais = null;
+							for (int i = 0; i < inputTabPane.getTabs().size(); i++) {
+								String title = inputTabPane.getTabs().get(i).getText();
+								if (title.equals("数据详情-"+clickedInputData.getKey())) {
+									inputsDetais = inputTabPane.getTabs().get(i);
+									inputsDetais.setContent(tv);
+									inputTabPane.getSelectionModel().select(inputsDetais);
+								}
+							}
+							if (inputsDetais == null) {
+								inputsDetais = new Tab("数据详情-"+clickedInputData.getKey());
+								inputsDetais.setContent(tv);
+								inputTabPane.getTabs().add(inputsDetais);
+								inputTabPane.getSelectionModel().select(inputsDetais);
 							}
 							
 							

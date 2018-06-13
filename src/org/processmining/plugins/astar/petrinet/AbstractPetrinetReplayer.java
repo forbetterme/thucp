@@ -74,6 +74,8 @@ import nl.tue.astar.Tail;
 import nl.tue.astar.Trace;
 import nl.tue.astar.impl.memefficient.MemoryEfficientAStarAlgorithm;
 import nl.tue.astar.util.LinearTrace;
+import outlier.util.Param;
+import prefuse.action.layout.graph.BalloonTreeLayout.Params;
 
 @KeepInProMCache
 @PNReplayAlgorithm
@@ -239,6 +241,8 @@ public abstract class AbstractPetrinetReplayer<T extends Tail, D extends Abstrac
 	protected SyncReplayResult recordToResult(AbstractPDelegate<?> d, XTrace trace, Trace filteredTrace, PRecord r,
 			int traceIndex, int stateCount, boolean isReliable, long milliseconds, int queuedStates,
 			int minCostMoveModel, TIntList unUsedIndices, TIntIntMap trace2orgTrace) {
+//		System.out.println("-"+minCostMoveModel);
+		minCostMoveModel=6;//手动计算如下成本：跳过所有的活动（选择跳过数量最小的一种）
 		List<PRecord> history = PRecord.getHistory(r);
 		double mmCost = 0; // total cost of move on model
 		double mlCost = 0; // total cost of move on log
@@ -673,9 +677,9 @@ public abstract class AbstractPetrinetReplayer<T extends Tail, D extends Abstrac
 				//				}
 				
 				//added by weizhijie
-				File f=new File("data/OutlierDetection/replay/alignment.csv");
+				File f=new File(Param.workspace+"replay/alignment.csv");
 				BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), "UTF-8"));
-				File f2=new File("data/OutlierDetection/replay/alignment-info.csv");
+				File f2=new File(Param.workspace+"replay/alignment-info.csv");
 				BufferedWriter w2 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f2), "UTF-8"));
 				for(SyncReplayResult myit:col){
 					List<Object> nodeInstance=myit.getNodeInstance();

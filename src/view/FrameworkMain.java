@@ -55,7 +55,7 @@ public class FrameworkMain extends Application {
 			vbox.setSpacing(5);
 			vbox.setPadding(new Insets(5, 0, 5, 0));
 			TabPane tabPane = new TabPane();
-			Tab input = new Tab("    input    ");
+			Tab input = new Tab("    数据视图    ");
 			input.closableProperty().set(false);
 
 			final MenuBar inputMenuBar = new MenuBar();
@@ -69,11 +69,11 @@ public class FrameworkMain extends Application {
 			// 为表格设置控制器
 			loader.setController(new InputTableController());
 			AnchorPane tableViewPane = loader.load();
-			tableViewPane.setPadding(new Insets(5, 500, 5, 500));
+			tableViewPane.setPadding(new Insets(5, 300, 5, 300));
 //			tableViewPane.setPrefSize(1000, 1000);
 //			tableViewPane.autosize();
 			TabPane inputTabPane = new TabPane();
-			Tab tableViewTab = new Tab("    data set    ");
+			Tab tableViewTab = new Tab("    数据集    ");
 			tableViewTab.setContent(tableViewPane);
 			tableViewTab.setClosable(false);
 			inputTabPane.getTabs().add(tableViewTab);
@@ -87,23 +87,27 @@ public class FrameworkMain extends Application {
 			input.setContent(inputVbox);
 			InputFromFileUI inputFromFileUI = new InputFromFileUI(inputVbox, menuFile, primaryStage,loader,inputTabPane);
 
-			Tab func = new Tab("    func    ");
+			Tab func = new Tab("    功能视图    ");
 			func.closableProperty().set(false);
 			Menu menu1 = new Menu("1.临床路径模型挖掘");
 			MenuItem menu11 = new MenuItem("LDA+PM");
-			MenuItem menu12 = new MenuItem("SS-LDA+PM");
-			MenuItem menu13 = new MenuItem("SSS-LDA+PM+SC");
-			menu1.getItems().addAll(menu11, menu12, menu13);
-			Menu menu2 = new Menu("2.异常诊疗过程发现");
-			MenuItem menuwei1 = new MenuItem("基于临床数据挖掘的医疗过程异常发现方法研究与应用");
+			menu1.getItems().addAll(menu11);
+			Menu menu2 = new Menu("2.诊疗过程异常发现");
+			MenuItem menuwei1 = new MenuItem("基于改进的成本函数的诊疗日志合规性检查");
+			MenuItem menuDataClean = new MenuItem("数据预处理");
+			MenuItem menuLDA = new MenuItem("基于LDA的诊疗主题聚类");
+			MenuItem menuKMeans = new MenuItem("基于K-means的天事件聚类");
+			menu2.getItems().add(menuDataClean);
+			menu2.getItems().add(menuLDA);
+			menu2.getItems().add(menuKMeans);
 			menu2.getItems().add(menuwei1);
-			Menu menu3 = new Menu("3.本地化临床路径模型设计");
-			Menu menu4 = new Menu("4.合规性度量");
-			Menu menu5 = new Menu("5.后续路径推荐");
-			Menu menu6 = new Menu("6.诊疗过程比较");
-			Menu menu7 = new Menu("7.临床路径模型分析");
+//			Menu menu3 = new Menu("3.本地化临床路径模型设计");
+//			Menu menu4 = new Menu("4.合规性度量");
+//			Menu menu5 = new Menu("5.后续路径推荐");
+//			Menu menu6 = new Menu("6.诊疗过程比较");
+//			Menu menu7 = new Menu("7.临床路径模型分析");
 			final MenuBar funcMenuBar = new MenuBar();
-			funcMenuBar.getMenus().addAll(menu1, menu2, menu3, menu4, menu5, menu6, menu7);
+			funcMenuBar.getMenus().addAll(menu1, menu2);//, menu3, menu4, menu5, menu6, menu7);
 			TabPane funcTabPane = new TabPane();
 			VBox funVbox = new VBox();
 			funVbox.setSpacing(5);
@@ -114,10 +118,13 @@ public class FrameworkMain extends Application {
 			funcTabPane.autosize();
 			funVbox.getChildren().add(funcMenuBar);
 			funVbox.getChildren().add(funcTabPane);
-			FuncOutlieDetectionUI funcOutlieDetectionUI = new FuncOutlieDetectionUI(primaryStage,menuwei1,funcTabPane);
+			FuncOutlieDetectionUI funcOutlieDetectionUI = new FuncOutlieDetectionUI(primaryStage,menuDataClean,menuLDA,menuKMeans,menuwei1,funcTabPane);
 			
 			Tab output = new Tab("    output    ");
 			output.closableProperty().set(false);
+			
+			
+//			TCPMUI tcpmUI = new TCPMUI(primaryStage, scene, menu11, toolbar, tabPane, stateLabel);
 			
 			tabPane.getTabs().addAll(input, func);
 			final Scene scene = new Scene(vbox);
@@ -126,7 +133,6 @@ public class FrameworkMain extends Application {
 			primaryStage.setTitle("THUCP");
 			primaryStage.setScene(scene);
 			primaryStage.show();
-
 			// final Label outputLabel = new Label();
 			// final MenuBar menuBar = new MenuBar();
 			//

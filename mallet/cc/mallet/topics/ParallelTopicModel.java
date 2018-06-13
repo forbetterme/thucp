@@ -1178,6 +1178,33 @@ public class ParallelTopicModel implements Serializable {
 			for (int i=0; i < limit; i++) {
 				IDSorter info = iterator.next();
 				result[topic][i] = alphabet.lookupObject(info.getID());
+//				System.out.println(info.getWeight()/tokensPerTopic[topic]);
+			}
+		}
+
+		return result;
+	}
+	public Object[][] getTopWordsProability(int numWords) {//add by weizhijie
+
+		ArrayList<TreeSet<IDSorter>> topicSortedWords = getSortedWords();
+		Object[][] result = new Object[ numTopics ][];
+
+		for (int topic = 0; topic < numTopics; topic++) {
+			
+			TreeSet<IDSorter> sortedWords = topicSortedWords.get(topic);
+			
+			// How many words should we report? Some topics may have fewer than
+			//  the default number of words with non-zero weight.
+			int limit = numWords;
+			if (sortedWords.size() < numWords) { limit = sortedWords.size(); }
+
+			result[topic] = new Object[limit];
+
+			Iterator<IDSorter> iterator = sortedWords.iterator();
+			for (int i=0; i < limit; i++) {
+				IDSorter info = iterator.next();
+//				result[topic][i] = alphabet.lookupObject(info.getID());
+				result[topic][i] = info.getWeight()/tokensPerTopic[topic];
 			}
 		}
 
@@ -1698,6 +1725,8 @@ public class ParallelTopicModel implements Serializable {
 
 		for (int doc = 0; doc < data.size(); doc++) {
 			int[] topics = data.get(doc).topicSequence.getFeatures();
+//			String label=(String) data.get(doc).instance.getName();
+//			System.out.println(label);
 			for (int position = 0; position < topics.length; position++) {
 				result[doc][ topics[position] ]++;
 			}
@@ -1721,6 +1750,16 @@ public class ParallelTopicModel implements Serializable {
 		}
 
 		return result;
+	}
+	
+	//add by weizhijie
+	public ArrayList<String> getDocLabels(){
+		ArrayList<String> re=new ArrayList<String>();
+		for (int doc = 0; doc < data.size(); doc++) {
+			String label=(String) data.get(doc).instance.getName();
+			re.add(label);
+		}
+		return re;
 	}
 	
 	public ArrayList<TreeSet<IDSorter>> getTopicDocuments(double smoothing) {

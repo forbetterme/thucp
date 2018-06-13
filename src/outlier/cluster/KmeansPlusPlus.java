@@ -3,10 +3,15 @@ package outlier.cluster;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,6 +32,10 @@ public class KmeansPlusPlus {
 
 	public KmeansPlusPlus(String docToTopicFilePath,String idFromCorpusForMapping) throws IOException {
 		initDataSet(docToTopicFilePath,idFromCorpusForMapping);
+	}
+	
+	public KmeansPlusPlus(String docToTopicFilePath) throws IOException {
+		initDataSet(docToTopicFilePath);
 	}
 
 	/**
@@ -72,11 +81,233 @@ public class KmeansPlusPlus {
 		}
 		dataset = points;
 	}
+	
+	private void initDataSet(String path) throws IOException {
+		dataset = new ArrayList<Point>();
 
+		ArrayList<Point> points = new ArrayList<Point>();
+		ArrayList<String> id = new ArrayList<String>();
+		Map<String, ArrayList<Double>> map = new HashMap<String, ArrayList<Double>>();
+		try {
+			BufferedReader reader;
+			reader = new BufferedReader(new FileReader(path));
+			String line = null;
+			int j = 0;
+			while ((line = reader.readLine()) != null) {
+				Map<String, Double> temp = new HashMap<String, Double>();
+				String[] strs = line.split(",");
+				String label=strs[0];
+				id.add(label);
+				for (int i = 1; i < strs.length; i++) {
+					temp.put(strs[i].split("=")[0], Double.valueOf(strs[i].split("=")[1]));
+				}
+				ArrayList<Double> arrayTemp = new ArrayList<Double>();
+				for (Integer k = 0; k < temp.size(); k++)
+					arrayTemp.add(temp.get(k.toString()));
+				// System.out.println(arrayTemp.toString());
+				map.put(label, arrayTemp);
+				j++;
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		for (Integer i = 0; i < id.size(); i++) {
+			Point temp = new Point(id.get(i), map.get(id.get(i)));
+			points.add(temp);
+		}
+		dataset = points;
+	}
+	
+	
+	public Map<Integer, List<Point>> kcluster(int k,int maxIteration,String kInitDaysPath) {
+		Set<String> kInitDays=new HashSet<String>();
+		try {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(kInitDaysPath),"UTF-8"));
+			String line="";
+			while ((line = reader.readLine()) != null) {
+				kInitDays.add(line);
+			}
+			reader.close();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		// 随机从样本集合中选取k个样本点作为聚簇中心
+		// 每个聚簇中心有哪些点
+		Map<Integer, List<Point>> nowClusterCenterMap = new HashMap<Integer, List<Point>>();
+		List<Point> nowCenter = new ArrayList<Point>();
+		List<Point> lastCenter = null;
+		for(int i=0;i<dataset.size();i++){
+			Point temp=dataset.get(i);
+			if(kInitDays.contains(temp.id))
+				nowCenter.add(temp);
+		}
+		if(nowCenter.size()!=k){
+			System.out.println("初始点选择有误");
+		}
+
+		// 上一次的聚簇中心
+		Map<Integer, List<Point>> lastClusterCenterMap = null;
+
+		// 找到离中心最近的点,然后加入以该中心为map键的list中
+		int iteration=0;
+		while (true) {
+			System.out.println(iteration);
+			iteration++;
+			for (Point point : dataset) {
+				double shortest = Double.MAX_VALUE;
+				int key = -1;
+				for (int i = 0; i < nowCenter.size(); i++) {
+					double distance = distance(point, nowCenter.get(i));
+					if (distance < shortest) {
+						shortest = distance;
+						key = i;
+					}
+				}
+				if (nowClusterCenterMap.containsKey(key)) {
+					nowClusterCenterMap.get(key).add(point);
+				} else {
+					ArrayList<Point> temp = new ArrayList<Point>();
+					temp.add(point);
+					nowClusterCenterMap.put(key, temp);
+				}
+			}
+			// 如果结果与上一次相同，则整个过程结束
+			if (isEqualCenter(nowCenter, lastCenter)) {
+				break;
+			}
+			if(maxIteration!=-1&&iteration>maxIteration) break;
+			// System.out.println("ok---------------------"+nowClusterCenterMap.size());
+			// for(Map.Entry<Integer, List<Point>>
+			// e:nowClusterCenterMap.entrySet()){
+			// System.out.println(e.getValue().size()+"**********");
+			// }
+			// System.out.println(lastCenter);
+			// System.out.println(nowCenter);
+			lastClusterCenterMap = nowClusterCenterMap;
+			lastCenter = nowCenter;
+			nowClusterCenterMap = new HashMap<Integer, List<Point>>();
+			nowCenter = new ArrayList<Point>();
+			// 把中心点移到其所有成员的平均位置处,并构建新的聚簇中心
+			for (int i = 0; i < lastCenter.size(); i++) {
+				List<Point> temp = lastClusterCenterMap.get(i);
+				if (temp == null || temp.size() == 0) {
+					nowCenter.add(lastCenter.get(i));
+				} else {
+					nowCenter.add(getNewCenterPoint(temp));
+				}
+			}
+		}
+		evaluate = evaluate(nowClusterCenterMap, nowCenter);
+		return nowClusterCenterMap;
+	}
 	/**
 	 * @param k
 	 *            �������Ŀ
 	 */
+	public Map<Integer, List<Point>> kcluster(int k,int maxIteration) {
+		// 随机从样本集合中选取k个样本点作为聚簇中心
+		// 每个聚簇中心有哪些点
+		Set<Integer> set = new HashSet<Integer>();
+		Map<Integer, List<Point>> nowClusterCenterMap = new HashMap<Integer, List<Point>>();
+		List<Point> nowCenter = new ArrayList<Point>();
+		List<Point> lastCenter = null;
+		Random random = new Random();
+		int num =random.nextInt(dataset.size());
+		set.add(num);
+		nowCenter.add(dataset.get(num));
+		ArrayList<Integer> candinate=new ArrayList<Integer>();
+		ArrayList<Double> dis=new ArrayList<Double>();
+		Double sum=0.0;
+		for (int i = 0; i < k - 1; i++) {
+			candinate.clear();
+			dis.clear();
+			sum=0.0;
+			for (int j = 0; j < dataset.size(); j++) {
+				if (set.contains(j))
+					continue;
+				double min=Double.MAX_VALUE;
+				for (Integer it : set) {
+					Point cu = dataset.get(it);
+					double disTemp = distance(dataset.get(j), cu);
+					if(disTemp<min){
+						min=disTemp;
+					}
+				}
+//				min=1-min;//欧式距离越小越相近，余弦相似度值越大越相近
+				candinate.add(j);
+				dis.add(min*min);
+				sum+=min*min;
+			}
+			int bound=sum.intValue();
+			int rand=random.nextInt(bound+1);
+			Double it=rand*1.0;
+			int h=candinate.size()-1;
+			while(it.compareTo(0.0)>=0){
+				it-=dis.get(h);
+				h--;
+			}
+			set.add(candinate.get(h+1));
+			nowCenter.add(dataset.get(candinate.get(h+1)));
+		}
+
+		// 上一次的聚簇中心
+		Map<Integer, List<Point>> lastClusterCenterMap = null;
+
+		// 找到离中心最近的点,然后加入以该中心为map键的list中
+		int iteration=0;
+		while (true) {
+			System.out.println(iteration);
+			iteration++;
+			for (Point point : dataset) {
+				double shortest = Double.MAX_VALUE;
+				int key = -1;
+				for (int i = 0; i < nowCenter.size(); i++) {
+					double distance = distance(point, nowCenter.get(i));
+					if (distance < shortest) {
+						shortest = distance;
+						key = i;
+					}
+				}
+				if (nowClusterCenterMap.containsKey(key)) {
+					nowClusterCenterMap.get(key).add(point);
+				} else {
+					ArrayList<Point> temp = new ArrayList<Point>();
+					temp.add(point);
+					nowClusterCenterMap.put(key, temp);
+				}
+			}
+			// 如果结果与上一次相同，则整个过程结束
+			if (isEqualCenter(nowCenter, lastCenter)) {
+				break;
+			}
+			if(maxIteration!=-1&&iteration>maxIteration) break;
+			// System.out.println("ok---------------------"+nowClusterCenterMap.size());
+			// for(Map.Entry<Integer, List<Point>>
+			// e:nowClusterCenterMap.entrySet()){
+			// System.out.println(e.getValue().size()+"**********");
+			// }
+			// System.out.println(lastCenter);
+			// System.out.println(nowCenter);
+			lastClusterCenterMap = nowClusterCenterMap;
+			lastCenter = nowCenter;
+			nowClusterCenterMap = new HashMap<Integer, List<Point>>();
+			nowCenter = new ArrayList<Point>();
+			// 把中心点移到其所有成员的平均位置处,并构建新的聚簇中心
+			for (int i = 0; i < lastCenter.size(); i++) {
+				List<Point> temp = lastClusterCenterMap.get(i);
+				if (temp == null || temp.size() == 0) {
+					nowCenter.add(lastCenter.get(i));
+				} else {
+					nowCenter.add(getNewCenterPoint(temp));
+				}
+			}
+		}
+		evaluate = evaluate(nowClusterCenterMap, nowCenter);
+		return nowClusterCenterMap;
+	}
+	
 	public Map<Integer, List<Point>> kcluster(int k) {
 		// 随机从样本集合中选取k个样本点作为聚簇中心
 		// 每个聚簇中心有哪些点
@@ -126,7 +357,10 @@ public class KmeansPlusPlus {
 		Map<Integer, List<Point>> lastClusterCenterMap = null;
 
 		// 找到离中心最近的点,然后加入以该中心为map键的list中
+		int iteration=0;
 		while (true) {
+			System.out.println(iteration);
+			iteration++;
 			for (Point point : dataset) {
 				double shortest = Double.MAX_VALUE;
 				int key = -1;
@@ -170,9 +404,7 @@ public class KmeansPlusPlus {
 				}
 			}
 		}
-		double temp = evaluate(nowClusterCenterMap, nowCenter);
-		// System.out.println(k + "," + temp);
-		evaluate = temp;
+		evaluate = evaluate(nowClusterCenterMap, nowCenter);
 		return nowClusterCenterMap;
 	}
 
@@ -233,6 +465,35 @@ public class KmeansPlusPlus {
 		distance = Math.sqrt(distance);
 		return distance;
 	}
+	
+	/**
+	 * 使用余弦距离计算两点之间距离
+	 * 
+	 * @param point1
+	 * @param point2
+	 * @return 两点之间距离
+	 */
+//	public  double distance(Point point1, Point point2) {
+//		ArrayList<Double> x1 = point1.value;
+//		ArrayList<Double> x2 = point2.value;
+//		double zi=0.0;
+//		double muZuo=0.0;
+//		double muYou=0.0;
+//		double distance = 0;
+//		double x1Temp=0.0;
+//		double x2Temp=0.0;
+//		for (int i = 0; i < x1.size(); i++) {
+//			x1Temp=x1.get(i);
+//			x2Temp=x2.get(i);
+//			zi+=x1Temp*x2Temp;
+//			muZuo+=x1Temp*x1Temp;
+//			muYou+=x2Temp*x2Temp;
+//		}
+//		double mu=Math.sqrt(muZuo)*Math.sqrt(muYou);
+//		distance = zi/mu;
+////		return 1.0-distance;
+//		return Math.log(1.0/distance);
+//	}
 
 	public double evaluate(Map<Integer, List<Point>> cluster, List<Point> center) {
 		double sum = 0;

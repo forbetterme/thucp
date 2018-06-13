@@ -26,7 +26,7 @@ public class Test extends JFrame{
 	}
 
 	public void init() throws Exception {
-		AlignLaunch.lauch("data/OutlierDetection/cluster/paper.csv");
+//		AlignLaunch.lauch("data/OutlierDetection/cluster/paper.csv");
 //		File file = new File("D:/result.xes");
 //		XParser x = new XesXmlParser();
 //		boolean flag = x.canParse(file);
@@ -40,5 +40,11 @@ public class Test extends JFrame{
 //
 //		this.setBounds(0, 0, 800, 400);
 //		this.setVisible(true);
+		
+//		double d=1.324;
+//		int cost=(int)(d*100);
+//		System.out.println(cost);
+		String str=",,,,-,,,-,,-,,,,,-,,,-,,,,,,-,,,,-,,,-,,,,,-,,-,,,-,,,,,-,";
+		System.out.println(str.split(",").length);
 	}
 }
